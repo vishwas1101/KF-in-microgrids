@@ -8,7 +8,7 @@ C = [1 0 0];
 
 D = 0;
 
-Plant = ss(A,[B B],C,0,-1,'inputname',{'u' 'w'},'outputname','y');
+Plant = ss(A,[B B],C,0,-1,'inputname',{'u' 'w'},'outputname','y')
 
 Q = 2.3; %noise covariances
 R = 1;
@@ -23,7 +23,7 @@ a = A;
 b = [B B 0*B];
 c = [C;C];
 d = [0 0 0;0 0 1];
-P = ss(a,b,c,d,-1,'inputname',{'u' 'w' 'v'},'outputname',{'y' 'yv'});
+P = ss(a,b,c,d,-1,'inputname',{'u' 'w' 'v'},'outputname',{'y' 'yv'})
 
 sys = parallel(P,kalmf,1,1,[],[]);
 
@@ -34,7 +34,7 @@ SimModel.inputname
 SimModel.outputname
 
 t = (0:100)';
-u = sin(t/5);
+u = -t/10;
 
 rng(10,'twister');
 w = sqrt(Q)*randn(length(t),1);
@@ -47,10 +47,8 @@ ye = out(:,2);  % filtered response
 yv = y + v;     % measured response
 
 clf
-subplot(211), plot(t,y,'b',t,ye,'r--'),
+subplot(111), plot(t,y,'b',t,ye,'r--'),
 xlabel('No. of samples'), ylabel('Output')
 title('Kalman filter response')
-subplot(212), plot(t,y-yv,'g',t,y-ye,'r--'),
-xlabel('No. of samples'), ylabel('Error')
 
 
