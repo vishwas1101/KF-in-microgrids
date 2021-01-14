@@ -33,7 +33,7 @@ b = [0.8, 334.2, 525.1, -103.6, 0; -350, 0, 0, 0, 0; -69.3, -66.1, -420.1, -828.
 c = [C ;C];
 d = [0, 0, 0, 0, 0; 0, 0, 0, 0, 1];
 
-Plant = ss(a, b, c, d, -1, 'inputname', {'v1', 'v2', 'v3', 'v4', 'v5'}, 'outputname', {'y','yv'});
+Plant1 = ss(a, b, c, d, -1, 'inputname', {'u', 'v', 'w', 'x', 'z'}, 'outputname', {'y','yv'});
 
-sys = parallel(Plant,KF,1,1,[],[])
+sys = parallel(Plant1, KF, 1, 1, [], [])
 
