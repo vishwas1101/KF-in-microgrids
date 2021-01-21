@@ -18,7 +18,7 @@ o = randn(4,1);
 cov_n = cov(n);
 cov_w = cov(o);
 
-plant = ss(A_d, B_d, C, D, -1, 'inputname', {'u' 'v' 'w' 'x'}, 'outputname', 'y')
+plant = ss(A_d, B_d, C, D, -1, 'inputname', {'u' 'v' 'w' 'x'}, 'outputname', 'y');
 
 [KF, L, P, M] = kalman(plant, cov_n, cov_w);
 
@@ -41,12 +41,9 @@ Plant1 = ss(a, b, c, d, -1, 'inputname', {'u', 'v', 'w', 'x', 'z'}, 'outputname'
 sys = parallel(Plant1, KF, 1, 1, [], []);
 
 simModel = feedback(sys, 1, 6, 2, 1);
-simModel = simModel([1 3 4 5 6], [1 2 3 5])
+simModel = simModel([1 3 4 5 6], [1 2 3 5]);
 
 simModel.inputname;
 simModel.outputname;
 
 %now plot the results 
-
-
-
