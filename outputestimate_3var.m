@@ -43,7 +43,7 @@ u = randn(length(t), 1);
 w = randn(length(t), 1);
 v = randn(length(t), 1);
 
-output = lsim(model,[w, v, u])
+output = lsim(model,[w, v, u]);
 % output2 = lsim(P,[w, v, u]);
 
 y_true = output(:, 1);   % true response
