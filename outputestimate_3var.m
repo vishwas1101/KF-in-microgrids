@@ -1,66 +1,148 @@
 clear;
 clc;
 
+%%%%%%%%%%%%%%%Output Estimate Starts Here%%%%%%%%%%%%%%%%%
+
 A = [1.1269, -0.4940, 0.1129; 1.0000, 0, 0; 0, 1.0000, 0];
-
 B = [-0.3832; 0.5919; 0.5191];
-
 C = [1, 1, 1];
-
 D = 0;
 
-Plant = ss(A,[B B], C, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
+outputEstimatePlant = ss(A,[B B], C, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
 
-Q = 5; % covariance process noise
-R = 3; % covariance observation noise
+Q = .5; % covariance process noise
+R = .3; % covariance observation noise
 
-[KF, L, p, M, Z] = kalman(Plant, Q, R);
-
-% kalmf = kalmf(1, :);
-% disp(M);
+[outputEstimateKF, L, p, M, Z] = kalman(outputEstimatePlant, Q, R);
 
 a = A;
 b = [B, B, 0*B];
 c = [C; C];
 d = [0, 0, 0; 0, 0, 1];
 
-P = ss(a, b, c, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+OutputEstimateP = ss(a, b, c, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+sys = parallel(OutputEstimateP, outputEstimateKF, 1, 1, [], []);
 
-sys = parallel(P, KF, 1, 1, [], []);
+modeloutputEstimate = feedback(sys, 1, 4, 2, 1); 
+modeloutputEstimate = modeloutputEstimate([1, 3],[1, 2, 3]); 
 
-%sys(1,4)
-model = feedback(sys, 1, 4, 2, 1);   %for MIMO system mention the inputs and outputs
-model = model([1, 3, 4, 5, 6],[1, 2, 3]); % Delete yv form I/O
-
-model.inputname;
-model.outputname;
+modeloutputEstimate.inputname;
+modeloutputEstimate.outputname;
 
 t = (0:100)';
-
 rng(1, 'twister');
 
 u = randn(length(t), 1);
 w = randn(length(t), 1);
 v = randn(length(t), 1);
 
-output = lsim(model,[w, v, u]);
-% output2 = lsim(P,[w, v, u]);
+outputEstimate = lsim(modeloutputEstimate,[w, v, u]);
 
-y_true = output(:, 1);   % true response
-y_estimate = output(:, 2);  % estimated response
-y_measured = y_true + v; %measured response 
-x1_e = output(:, 3); % state estimate 1
-x2_e = output(:, 4); % state estimate 2
-x3_e = output(:, 5); % state estimate 3
+y_true = outputEstimate(:, 1);   
+y_estimate = outputEstimate(:, 2);  
+y_measured = y_true + v; 
 
-MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5)
-MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5)
+%%%%%%%%%%%%%%%State Estimate 1 Starts Here%%%%%%%%%%%%%%%%%
+
+C1 = [1, 0, 0];
+
+stateEstimatePlant1 = ss(A,[B B], C1, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
+
+[stateEstimateKF1, L1, p1, M1, Z1] = kalman(stateEstimatePlant1, Q, R);
+
+c1 = [C1; C1]; 
+
+stateEstimateP1 = ss(a, b, c1, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+sys1 = parallel(stateEstimateP1, stateEstimateKF1, 1, 1, [], []);
+
+modelStateEstimate1 = feedback(sys1, 1, 4, 2, 1);
+modelStateEstimate1 = modelStateEstimate1([1, 3], [1, 2, 3]); 
+
+modelStateEstimate1.inputname;
+modelStateEstimate1.outputname;
+
+stateEstimate1 = lsim(modelStateEstimate1,[w, v, u]);
+
+x1_true = stateEstimate1(:, 1);   
+x1_estimate = stateEstimate1(:, 2);  
+x1_measured = x1_true + v; 
+
+%%%%%%%%%%%%%%%State Estimate 2 Starts Here%%%%%%%%%%%%%%%%%
+
+C2 = [0, 1, 0];
+
+stateEstimatePlant2 = ss(A,[B B], C2, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
+
+[stateEstimateKF2, L2, p2, M2, Z2] = kalman(stateEstimatePlant2, Q, R);
+
+c2 = [C2; C2]; 
+
+stateEstimateP2 = ss(a, b, c2, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+sys2 = parallel(stateEstimateP2, stateEstimateKF2, 1, 1, [], []);
+
+modelStateEstimate2 = feedback(sys2, 1, 4, 2, 1);
+modelStateEstimate2 = modelStateEstimate2([1, 3], [1, 2, 3]); 
+
+modelStateEstimate2.inputname;
+modelStateEstimate2.outputname;
+
+stateEstimate2 = lsim(modelStateEstimate2,[w, v, u]);
+
+x2_true = stateEstimate2(:, 1);   
+x2_estimate = stateEstimate2(:, 2);  
+x2_measured = x2_true + v; 
+
+%%%%%%%%%%%%%%%State Estimate 3 Starts Here%%%%%%%%%%%%%%%%%
+
+C3 = [0, 0, 1];
+
+stateEstimatePlant3 = ss(A,[B B], C3, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
+
+[stateEstimateKF3, L3, p3, M3, Z3] = kalman(stateEstimatePlant3, Q, R);
+
+c3 = [C3; C3]; 
+
+stateEstimateP3 = ss(a, b, c3, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+sys3 = parallel(stateEstimateP3, stateEstimateKF3, 1, 1, [], []);
+
+modelStateEstimate3 = feedback(sys3, 1, 4, 2, 1);
+modelStateEstimate3 = modelStateEstimate3([1, 3], [1, 2, 3]); 
+
+modelStateEstimate3.inputname;
+modelStateEstimate3.outputname;
+
+stateEstimate3 = lsim(modelStateEstimate3,[w, v, u]);
+
+x3_true = stateEstimate3(:, 1);   
+x3_estimate = stateEstimate3(:, 2);  
+x3_measured = x3_true + v; 
+
+
+%%%%%%%%%%%%%%%%%%Plotting Results%%%%%%%%%%%%%%%%%
+
+MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
+MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
 
 clf
-
-subplot(111);
+subplot(411);
 plot(t, y_true, 'g', t, y_estimate, 'b');
 xlabel('samples'), ylabel('output')
-title('Kalman filter')
+title('Output Estimate')
+
+subplot(412);
+plot(t, x1_true, 'g', t, x1_estimate, 'b');
+xlabel('samples'), ylabel('output')
+title('State Estimate 1')
+
+subplot(413);
+plot(t, x2_true, 'g', t, x2_estimate, 'b');
+xlabel('samples'), ylabel('output')
+title('State Estimate 2')
+
+subplot(414);
+plot(t, x3_true, 'g', t, x3_estimate, 'b');
+xlabel('samples'), ylabel('output')
+title('State Estimate 3')
 
 
+%%%%%%%%%%%%%%%%%%%%% END %%%%%%%%%%%%%%%%%%%%%%%%%
