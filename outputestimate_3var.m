@@ -42,30 +42,10 @@ y_true = outputEstimate(:, 1);
 y_estimate = outputEstimate(:, 2);  
 y_measured = y_true + v; 
 
-%%%%%%%%%%%%%%%State Estimate 1 Starts Here%%%%%%%%%%%%%%%%%
+y_estimate(1,1) = y_true(1,1);
 
-C1 = [1, 0, 0];
-
-stateEstimatePlant1 = ss(A,[B B], C1, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
-
-[stateEstimateKF1, L1, p1, M1, Z1] = kalman(stateEstimatePlant1, Q, R);
-
-c1 = [C1; C1]; 
-
-stateEstimateP1 = ss(a, b, c1, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
-sys1 = parallel(stateEstimateP1, stateEstimateKF1, 1, 1, [], []);
-
-modelStateEstimate1 = feedback(sys1, 1, 4, 2, 1);
-modelStateEstimate1 = modelStateEstimate1([1, 3], [1, 2, 3]); 
-
-modelStateEstimate1.inputname;
-modelStateEstimate1.outputname;
-
-stateEstimate1 = lsim(modelStateEstimate1,[w, v, u]);
-
-x1_true = stateEstimate1(:, 1);   
-x1_estimate = stateEstimate1(:, 2);  
-x1_measured = x1_true + v; 
+MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
+MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
 
 %%%%%%%%%%%%%%%State Estimate 2 Starts Here%%%%%%%%%%%%%%%%%
 
@@ -92,6 +72,44 @@ x2_true = stateEstimate2(:, 1);
 x2_estimate = stateEstimate2(:, 2);  
 x2_measured = x2_true + v; 
 
+x2_estimate(1,1) = x2_true(1,1);
+
+%%%%%%%%%%%%%%%State Estimate 1 Starts Here%%%%%%%%%%%%%%%%%
+
+% C1 = [1, 0, 0];
+C1 = [1, 1, 0];
+
+stateEstimatePlant1 = ss(A,[B B], C1, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
+
+[stateEstimateKF1, L1, p1, M1, Z1] = kalman(stateEstimatePlant1, Q, R);
+
+c1 = [C1; C1]; 
+
+stateEstimateP1 = ss(a, b, c1, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+sys1 = parallel(stateEstimateP1, stateEstimateKF1, 1, 1, [], []);
+
+modelStateEstimate1 = feedback(sys1, 1, 4, 2, 1);
+modelStateEstimate1 = modelStateEstimate1([1, 3], [1, 2, 3]); 
+
+modelStateEstimate1.inputname;
+modelStateEstimate1.outputname;
+
+stateEstimate1 = lsim(modelStateEstimate1,[w, v, u]);
+
+% x1_true = stateEstimate1(:, 1);   
+% x1_estimate = stateEstimate1(:, 2);  
+% x1_measured = x1_true + v; 
+
+x1_true = stateEstimate1(:, 1) - stateEstimate2(:, 1);   
+x1_estimate = stateEstimate1(:, 2) - stateEstimate2(:, 2);  
+x1_measured = x1_true + v; 
+
+
+x1_estimate(1,1) = x1_true(1,1);
+
+MSR_KF1 = (0.0083*(sum(abs(x1_estimate - x1_true))^2)^0.5);
+MSR_measure1 = (0.0083*(sum(abs(x1_measured - x1_true))^2)^0.5);
+
 %%%%%%%%%%%%%%%State Estimate 3 Starts Here%%%%%%%%%%%%%%%%%
 
 C3 = [0, 0, 1];
@@ -117,11 +135,9 @@ x3_true = stateEstimate3(:, 1);
 x3_estimate = stateEstimate3(:, 2);  
 x3_measured = x3_true + v; 
 
+x3_estimate(1,1) = x3_true(1,1);
 
 %%%%%%%%%%%%%%%%%%Plotting Results%%%%%%%%%%%%%%%%%
-
-MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
-MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
 
 clf
 subplot(411);

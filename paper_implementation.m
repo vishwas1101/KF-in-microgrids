@@ -46,8 +46,10 @@ y_true = output(:, 1);   % true response
 y_estimate = output(:, 2);  % estimated response
 y_measured = y_true + v; %measured response 
 
-MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
-MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
+y_estimate(1,1) = y_true(1,1);
+
+MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5)
+MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5)
 
 %%%%%%%%%%%%%%%State Estimate 1 Starts Here%%%%%%%%%%%%%%%%%
 
@@ -60,6 +62,8 @@ Plant1 = ss(A, B, C1, 0, -1, 'inputname',{'u', 'w', 'x'}, 'outputname', 'y');
 c1 = [1, 0, 0; 1, 0, 0];
 
 P1 = ss(a, b, c1, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'});
+
+x1_initial = pinv([C1*(C1)'])*(C1)'; 
 
 sys1 = parallel(P1, KF1, 1, 1, [], []);
 
@@ -75,6 +79,8 @@ x1_true = state1(:, 1);
 x1_estimate = state1(:, 2);  
 x1_measured = x1_true + v; 
 
+x1_estimate(1,1) = x1_true(1,1);
+
 %%%%%%%%%%%%%%%State Estimate 2 Starts Here%%%%%%%%%%%%%%%%%
 
 C2 = [0, 1, 0];
@@ -86,6 +92,8 @@ Plant2 = ss(A, B, C2, 0, -1, 'inputname',{'u', 'w', 'x'}, 'outputname', 'y');
 c2 = [0, 1, 0; 0, 1, 0];
 
 P2 = ss(a, b, c2, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'});
+
+x2_initial = pinv([C2*(C2)'])*(C2)'; 
 
 sys2 = parallel(P2, KF2, 1, 1, [], []);
 
@@ -101,6 +109,8 @@ x2_true = state2(:, 1);
 x2_estimate = state2(:, 2);  
 x2_measured = x2_true + v; 
 
+x2_estimate(1,1) = x2_true(1,1);
+
 %%%%%%%%%%%%%%%State Estimate 3 Starts Here%%%%%%%%%%%%%%%%%
 
 C3 = [0, 0, 1];
@@ -112,6 +122,8 @@ Plant3 = ss(A, B, C3, 0, -1, 'inputname',{'u', 'w', 'x'}, 'outputname', 'y');
 c3 = [0, 0, 1; 0, 0, 1];
 
 P3 = ss(a, b, c3, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'});
+
+x3_initial = pinv([C3*(C3)'])*(C3)';
 
 sys3 = parallel(P3, KF3, 1, 1, [], []);
 
@@ -126,6 +138,8 @@ state3 = lsim(modelEstimate3,[w, v, u, x]);
 x3_true = state3(:, 1);   
 x3_estimate = state3(:, 2);  
 x3_measured = x3_true + v; 
+
+x3_estimate(1, 1) = x3_true(1, 1);
 
 %%%%%%%%%%%%%%%%%%Plotting Results%%%%%%%%%%%%%%%%%
 
