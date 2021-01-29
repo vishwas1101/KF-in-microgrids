@@ -5,38 +5,40 @@ clc;
 
 %%%%%%%%%%%%%%%Output Estimate Starts Here%%%%%%%%%%%%%%%%%
 
-% matrices from the paper
+% Values as given in the paper. 
 A = [1.03, -.01, .01; .001, 1.02, -.01; .001, -.1, 1.05]; % Added very small values to the A matrix because the kalman filter would not work due gain matrix being indefinite. 
 B = [0.6, 0.1, 0.2; 0.1 0.7 0.15; 0.2, 0.15, 0.8];
 C = [1, 1, 1];
 D = 0;
+
 
 Plant = ss(A, B, C, 0, -1, 'inputname',{'u', 'w', 'x'}, 'outputname', 'y');
 
 Q = 10; % covariance process noise
 R = 10; % covariance observation noise
 
-% applying the filter to the above state space model
+% applying the filter
 [KF, L, p, M, Z] = kalman(Plant, Q, R);
 
-% another plant to put it in parallel with the filter using v as the
-% dummy input.
+% 
 a = A;
 b = [0.6, 0.1, 0.2, 0; 0.1, 0.7, 0.15, 0; 0.2, 0.15, 0.8, 0];
 c = [1, 1, 1; 1, 1, 1];
 d = [0, 0, 0, 0; 0, 0, 0, 1];
 
+% another plant to put it in parallel to the Kalman filter with v as the
+% dummy input. 
 P = ss(a, b, c, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'});
 
-% putting both in parallel and using the first input as the shared input. 
+% putting in parallel and using the first input as the shared input. 
 sys = parallel(P, KF, 1, 1, [], []);
 
 % connecting the filter input to the plant output.  
 model = feedback(sys, 1, 6, 2, 1);  
-% taking the estimate and true value, along with the inputs
+% taking the estimate and true value, along with the input
 model = model([1, 3],[2, 3, 4, 5]); 
 
-% random inputs and 100 samples 
+% random inputs 
 t = (0:100)';
 
 rng(1, 'twister');
@@ -87,7 +89,6 @@ x1_estimate(1,1) = x1_initial(1,1);
 
 %%%%%%%%%%%%%%%State Estimate 2 Starts Here%%%%%%%%%%%%%%%%%
 
-% changed the output matrix c here to get my output as y = x2
 C2 = [0, 1, 0];
 
 Plant2 = ss(A, B, C2, 0, -1, 'inputname',{'u', 'w', 'x'}, 'outputname', 'y');
@@ -98,10 +99,9 @@ c2 = [0, 1, 0; 0, 1, 0];
 
 P2 = ss(a, b, c2, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'});
 
-% the initial value conditions given in the paper applied here
-x2_initial = pinv([C2*(C2)'])*(C2)' * y_true(1);
+x2_initial = pinv([C2*(C2)'])*(C2)' * y_true(1); 
 
-sys2 = parallel(P2, KF2, 1, 1, [], []);
+sys2 = parallel(P2, KF2, 1, 1, [], [])
 
 modelEstimate2 = feedback(sys2, 1, 6, 2, 1);
 modelEstimate2 = modelEstimate2([1, 3],[2, 3, 4, 5]);
@@ -112,7 +112,7 @@ x2_true = state2(:, 1);
 x2_estimate = state2(:, 2);  
 x2_measured = x2_true + v; 
 
-x2_estimate(1,1) = x2_initial(2,1);
+x2_estimate(1,1) = x2_(1,1);
 
 %%%%%%%%%%%%%%%State Estimate 3 Starts Here%%%%%%%%%%%%%%%%%
 
@@ -126,7 +126,7 @@ c3 = [0, 0, 1; 0, 0, 1];
 
 P3 = ss(a, b, c3, d, -1, 'inputname', {'u', 'w', 'x', 'v'}, 'outputname', {'y', 'yv'}); % true
 
-x3_initial = pinv([C3*(C3)'])*(C3)' * y_true(1);
+x3_initial = pinv([C3*(C3)'])*(C3)';
 
 sys3 = parallel(P3, KF3, 1, 1, [], []);
 
@@ -139,7 +139,7 @@ x3_true = state3(:, 1);
 x3_estimate = state3(:, 2);  
 x3_measured = x3_true + v; 
 
-x3_estimate(1, 1) = x3_initial(3, 1);
+x3_estimate(1, 1) = x3_true(1, 1);
 
 %%%%%%%%%%%%%%%%%%Plotting Results%%%%%%%%%%%%%%%%%
 
@@ -147,7 +147,7 @@ clf
 subplot(411);
 plot(t, y_true, 'g', t, y_estimate, 'b');
 xlabel('samples'), ylabel('output')
-title('Output Estimate')
+title('Output Estimate 1')
 
 subplot(412);
 plot(t, x1_true, 'g', t, x1_estimate, 'b');

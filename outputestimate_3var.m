@@ -3,6 +3,7 @@ clc;
 
 %%%%%%%%%%%%%%%Output Estimate Starts Here%%%%%%%%%%%%%%%%%
 
+% matrices as per the matlab example
 A = [1.1269, -0.4940, 0.1129; 1.0000, 0, 0; 0, 1.0000, 0];
 B = [-0.3832; 0.5919; 0.5191];
 C = [1, 1, 1];
@@ -13,22 +14,27 @@ outputEstimatePlant = ss(A,[B B], C, 0, -1, 'inputname',{'u', 'w'}, 'outputname'
 Q = .5; % covariance process noise
 R = .3; % covariance observation noise
 
-[outputEstimateKF, L, p, M, Z] = kalman(outputEstimatePlant, Q, R);
+% applying the filter to the above state space model
+[outputEstimateKF, L, p, M, Z] = kalman(outputEstimatePlant, Q, R); % the filter
 
+% another plant to put it in parallel with the filter using v as the
+% dummy input
 a = A;
 b = [B, B, 0*B];
 c = [C; C];
 d = [0, 0, 0; 0, 0, 1];
 
 OutputEstimateP = ss(a, b, c, d, -1, 'inputname', {'u', 'w', 'v'}, 'outputname', {'y', 'yv'});
+
+% putting both in parallel and using the first input as the shared input. 
 sys = parallel(OutputEstimateP, outputEstimateKF, 1, 1, [], []);
 
+% connecting the filter input to the plant output.  
 modeloutputEstimate = feedback(sys, 1, 4, 2, 1); 
+% taking the estimate and true value, along with the inputs
 modeloutputEstimate = modeloutputEstimate([1, 3],[1, 2, 3]); 
 
-modeloutputEstimate.inputname;
-modeloutputEstimate.outputname;
-
+% random inputs and 100 samples 
 t = (0:100)';
 rng(1, 'twister');
 
@@ -44,12 +50,15 @@ y_measured = y_true + v;
 
 y_estimate(1,1) = y_true(1,1);
 
-MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
-MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
+% MSR_KF = (0.0083*(sum(abs(y_estimate - y_true))^2)^0.5);
+% MSR_measure = (0.0083*(sum(abs(y_measured - y_true))^2)^0.5);
 
 %%%%%%%%%%%%%%%State Estimate 2 Starts Here%%%%%%%%%%%%%%%%%
 
+% changed the output matrix c here to get my output as y = x1
 C2 = [0, 1, 0];
+
+% similar steps are followed for the rest of the estimates
 
 stateEstimatePlant2 = ss(A,[B B], C2, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
 
@@ -63,21 +72,20 @@ sys2 = parallel(stateEstimateP2, stateEstimateKF2, 1, 1, [], []);
 modelStateEstimate2 = feedback(sys2, 1, 4, 2, 1);
 modelStateEstimate2 = modelStateEstimate2([1, 3], [1, 2, 3]); 
 
-modelStateEstimate2.inputname;
-modelStateEstimate2.outputname;
-
 stateEstimate2 = lsim(modelStateEstimate2,[w, v, u]);
 
 x2_true = stateEstimate2(:, 1);   
 x2_estimate = stateEstimate2(:, 2);  
 x2_measured = x2_true + v; 
 
-x2_estimate(1,1) = x2_true(1,1);
+% initial values
+x2_initial = pinv([C2*(C2)'])*(C2)' * y_true(1);
+x2_estimate(1,1) = x2_initial(2,1);
 
 %%%%%%%%%%%%%%%State Estimate 1 Starts Here%%%%%%%%%%%%%%%%%
 
-% C1 = [1, 0, 0];
-C1 = [1, 1, 0];
+C1 = [1, 0, 0];
+% C1 = [1, 1, 0];
 
 stateEstimatePlant1 = ss(A,[B B], C1, 0, -1, 'inputname',{'u', 'w'}, 'outputname', 'y');
 
@@ -91,24 +99,23 @@ sys1 = parallel(stateEstimateP1, stateEstimateKF1, 1, 1, [], []);
 modelStateEstimate1 = feedback(sys1, 1, 4, 2, 1);
 modelStateEstimate1 = modelStateEstimate1([1, 3], [1, 2, 3]); 
 
-modelStateEstimate1.inputname;
-modelStateEstimate1.outputname;
-
 stateEstimate1 = lsim(modelStateEstimate1,[w, v, u]);
 
-% x1_true = stateEstimate1(:, 1);   
-% x1_estimate = stateEstimate1(:, 2);  
-% x1_measured = x1_true + v; 
-
-x1_true = stateEstimate1(:, 1) - stateEstimate2(:, 1);   
-x1_estimate = stateEstimate1(:, 2) - stateEstimate2(:, 2);  
+x1_true = stateEstimate1(:, 1);   
+x1_estimate = stateEstimate1(:, 2);  
 x1_measured = x1_true + v; 
 
+% x1_true = stateEstimate1(:, 1) - stateEstimate2(:, 1);   
+% x1_estimate = stateEstimate1(:, 2) - stateEstimate2(:, 2);  
+% x1_measured = x1_true + v; 
 
 x1_estimate(1,1) = x1_true(1,1);
 
 MSR_KF1 = (0.0083*(sum(abs(x1_estimate - x1_true))^2)^0.5);
 MSR_measure1 = (0.0083*(sum(abs(x1_measured - x1_true))^2)^0.5);
+
+x1_initial = pinv([C1*(C1)'])*(C1)' * y_true(1);
+x1_estimate(1,1) = x1_initial(1,1);
 
 %%%%%%%%%%%%%%%State Estimate 3 Starts Here%%%%%%%%%%%%%%%%%
 
@@ -126,16 +133,16 @@ sys3 = parallel(stateEstimateP3, stateEstimateKF3, 1, 1, [], []);
 modelStateEstimate3 = feedback(sys3, 1, 4, 2, 1);
 modelStateEstimate3 = modelStateEstimate3([1, 3], [1, 2, 3]); 
 
-modelStateEstimate3.inputname;
-modelStateEstimate3.outputname;
-
 stateEstimate3 = lsim(modelStateEstimate3,[w, v, u]);
 
 x3_true = stateEstimate3(:, 1);   
 x3_estimate = stateEstimate3(:, 2);  
 x3_measured = x3_true + v; 
 
-x3_estimate(1,1) = x3_true(1,1);
+x3_initial = pinv([C1*(C1)'])*(C1)' * y_true(1);
+x3_estimate(1,1) = x3_initial(3,1);
+
+y_estimate(1,1) = C*[x1_initial(1,1); x2_initial(2,1); x3_initial(3,1)];
 
 %%%%%%%%%%%%%%%%%%Plotting Results%%%%%%%%%%%%%%%%%
 
